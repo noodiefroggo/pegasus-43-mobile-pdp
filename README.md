@@ -26,6 +26,7 @@ Then open <http://localhost:5175/> with a 375px-wide viewport (in DevTools, choo
 |---|---|
 | `index.html` | The whole prototype: HTML, CSS and JS, with no dependencies |
 | `pegasus-43-stock.json` | Stock data: 26 sizes with price, colorway, stock level and launch date |
+| [`BUILD_PROMPT.md`](BUILD_PROMPT.md) | The prompt that describes how to build this prototype |
 | `screenshots/` | Images used in this README |
 
 ## Page structure (375 × 812)
