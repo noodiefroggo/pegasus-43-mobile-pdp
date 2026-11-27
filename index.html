@@ -1,0 +1,831 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Nike Pegasus 43 · mobile prototype (375px)</title>
+<style>
+  /* ---------- Design tokens ---------- */
+  :root {
+    --text: #111111;
+    --text-2: #6B6B6B;
+    --stroke: #767676;
+    --so-fill: #F0F0F0;
+    --so-text: #8A8A8A;
+    --low: #9A4D00;
+    --bg: #FFFFFF;
+    --hero: #F5F5F5;
+    --divider: #E5E5E5;
+    --skel: #ECECEC;
+
+    --sat: env(safe-area-inset-top, 0px);
+    --sab: env(safe-area-inset-bottom, 0px);
+
+    /* System stack: no web font, so nothing swaps after first paint. */
+    --font: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Segoe UI", Helvetica, Arial, sans-serif;
+  }
+  /* Prototype control: simulate the two frames' safe areas in a browser. */
+  body[data-frame="812"] { --sat: 47px; --sab: 34px; }
+  body[data-frame="667"] { --sat: 20px; --sab: 0px; }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  html { background: #E8E8E8; -webkit-text-size-adjust: 100%; }
+  html.lock { overflow: hidden; }
+  /* Defined on body so it picks up the frame overrides above. */
+  body { --bar: calc(80px + var(--sab)); }
+  body { margin: 0; font-family: var(--font); color: var(--text); -webkit-font-smoothing: antialiased; }
+  button { font: inherit; color: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  h1, h2, p { margin: 0; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+  .app {
+    position: relative;
+    max-width: 375px;
+    margin: 0 auto;
+    min-height: 100svh;
+    background: var(--bg);
+    padding-bottom: var(--bar);        /* bottom spacer = sticky bar height */
+  }
+  .safe-top { height: var(--sat); background: var(--hero); }
+
+  /* ---------- Skeleton ---------- */
+  .skel {
+    background: linear-gradient(90deg, var(--skel) 0%, #F6F6F6 50%, var(--skel) 100%);
+    background-size: 200% 100%;
+    animation: shimmer 1.2s linear infinite;
+    border-radius: 6px;
+  }
+  @keyframes shimmer { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+  .fade-in { animation: fade 150ms ease-out; }
+  @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+
+  /* ---------- 0. Top controls (overlay, no height) ---------- */
+  .topctl {
+    position: absolute; z-index: 5;
+    top: calc(var(--sat) + 8px); left: 16px; right: 16px;
+    display: flex; justify-content: space-between;
+    pointer-events: none;
+  }
+  .icon-btn {
+    pointer-events: auto; position: relative;
+    width: 44px; height: 44px; border: 0; border-radius: 50%;
+    background: rgba(255, 255, 255, .92);
+    display: grid; place-items: center;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, .08);
+  }
+  .icon-btn svg { width: 22px; height: 22px; fill: none; stroke: var(--text); stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+  .badge {
+    position: absolute; top: 4px; right: 3px;
+    min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px;
+    background: var(--text); color: #fff; font: 600 11px/16px var(--font); text-align: center;
+  }
+  .badge[hidden] { display: none; }
+
+  /* ---------- 1. Hero ---------- */
+  /* 40svh: 325px on a 375 x 812 screen, 267px on 375 x 667. svh, so it never resizes with the browser toolbar. */
+  .hero { position: relative; height: 40svh; background: var(--hero); }
+  .hero-track {
+    display: flex; height: 100%;
+    overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none;
+    overscroll-behavior-x: contain;
+  }
+  .hero-track::-webkit-scrollbar { display: none; }
+  .hero-track:focus-visible { outline: 2px solid var(--text); outline-offset: -4px; }
+  .slide { flex: 0 0 100%; height: 100%; scroll-snap-align: center; display: grid; place-items: center; }
+  .ph {
+    width: 72%; height: 62%;
+    border: 1.5px dashed #C9C9C9; border-radius: 12px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+    color: var(--text-2); font: 400 13px/16px var(--font); text-align: center;
+  }
+  .ph strong { font: 600 15px/20px var(--font); color: var(--text); }
+  .dots { position: absolute; left: 0; right: 0; bottom: 12px; display: flex; justify-content: center; gap: 6px; pointer-events: none; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(17, 17, 17, .22); transition: background .15s; }
+  .dot.on { background: var(--text); }
+
+  /* ---------- 2. Name and price ---------- */
+  .title { display: grid; column-gap: 12px; padding: 16px 16px 4px; }
+  .title hgroup, .price-block { display: contents; }
+  .title h1 { grid-area: name; font: 700 28px/32px var(--font); letter-spacing: -0.01em; align-self: last baseline; }
+  .colorway { grid-area: color; font: 400 13px/16px var(--font); color: var(--text-2); align-self: center; }
+  .price { grid-area: price; font: 600 20px/32px var(--font); white-space: nowrap; align-self: last baseline; }
+  .tax { grid-area: tax; font: 400 13px/16px var(--font); color: var(--text-2); white-space: nowrap; }
+
+  /* Option A (alternative, ?price=a): price right of the name. 16 + 32 + 20 + 4 = 72 */
+  body[data-price="a"] .title {
+    min-height: 72px;
+    grid-template-columns: 1fr auto;
+    grid-template-rows: minmax(32px, auto) 20px;
+    grid-template-areas: "name price" "color tax";
+  }
+  /* The note spans both columns so it never widens the price column and squeezes the name. */
+  /* A shorter line box keeps the baseline-aligned price from pushing the 32px row taller. */
+  body[data-price="a"] .price { line-height: 20px; }
+  body[data-price="a"] .tax { grid-area: 2 / 1 / 3 / -1; justify-self: end; align-self: center; }
+
+  /* Option B (default): large price line under the name. 16 + 32 + 20 + 4 + 32 + 4 = 108 */
+  body[data-price="b"] .title {
+    min-height: 108px;
+    grid-template-columns: auto 1fr;
+    grid-template-rows: minmax(32px, auto) 20px 4px 32px;
+    grid-template-areas: "name name" "color color" ". ." "price tax";
+  }
+  body[data-price="b"] .price { font-size: 24px; }
+  body[data-price="b"] .tax { align-self: last baseline; }
+
+  /* ---------- 3. Size selector ---------- */
+  .sizes { padding: 0 16px; }
+  .sizes-head {
+    height: 60px; padding: 12px 0 4px;
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  }
+  .sizes-head .left { display: flex; align-items: center; gap: 12px; min-width: 0; }
+  h2 { font: 600 18px/24px var(--font); }
+  .key { display: inline-flex; align-items: center; gap: 6px; font: 400 13px/16px var(--font); color: var(--text-2); white-space: nowrap; }
+  .key::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--low); }
+  .text-btn {
+    height: 44px; padding: 0 0 0 8px; border: 0; background: none;
+    font: 500 15px/20px var(--font); text-decoration: underline; text-underline-offset: 3px; white-space: nowrap;
+  }
+
+  .grid {
+    position: relative;
+    height: 464px;                                   /* 7 rows × 56 + 6 gaps × 12 */
+    display: grid; grid-template-columns: repeat(4, 1fr); grid-auto-rows: 56px; gap: 12px;
+    align-content: start;
+  }
+  .grid > .skel { height: 56px; border-radius: 8px; }
+
+  .size { position: relative; display: block; height: 56px; }
+  .size input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; pointer-events: none; }
+  .face {
+    position: relative; height: 56px; border-radius: 8px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: #fff; box-shadow: inset 0 0 0 1.5px var(--stroke);
+    transition: transform 80ms ease-out, background-color 80ms;
+    user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent;
+    cursor: pointer;
+  }
+  .face .m { font: 600 16px/20px var(--font); }
+  .face .w { font: 400 13px/16px var(--font); color: var(--text-2); }
+  .size:active .face { transform: scale(.97); }
+  .size input:checked + .face { background: var(--text); color: #fff; box-shadow: none; }
+  .size input:checked + .face .w { color: rgba(255, 255, 255, .78); }
+  .size input:focus-visible + .face { outline: 2px solid var(--text); outline-offset: 2px; }
+
+  .size.low .face::after {
+    content: ""; position: absolute; top: 8px; right: 8px;
+    width: 8px; height: 8px; border-radius: 50%; background: var(--low);
+  }
+  .size.low input:checked + .face::after { background: #FFB547; }
+
+  .size.sold .face {
+    cursor: not-allowed; color: var(--so-text); box-shadow: none;
+    background:
+      linear-gradient(to top right, transparent calc(50% - .75px), #C8C8C8 calc(50% - .75px), #C8C8C8 calc(50% + .75px), transparent calc(50% + .75px)),
+      var(--so-fill);
+  }
+  .size.sold .face .w { color: var(--so-text); }
+  .size.sold:active .face { transform: none; }
+
+  .grid-msg {
+    grid-column: 1 / -1; grid-row: 1 / span 7;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+    border-radius: 8px; background: #FAFAFA; text-align: center; padding: 24px;
+  }
+  .grid-msg p { font: 400 15px/20px var(--font); color: var(--text-2); }
+  .pill-btn {
+    height: 44px; padding: 0 20px; border-radius: 22px;
+    border: 1.5px solid var(--stroke); background: #fff; font: 600 15px/20px var(--font);
+  }
+
+  /* ---------- 4. Tech and description ---------- */
+  .tech { padding: 32px 16px 0; }
+  .desc {
+    margin-top: 12px; height: 72px;
+    font: 400 16px/24px var(--font); color: var(--text-2);
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .rows { margin-top: 16px; }
+  .rows details summary {
+    height: 56px; list-style: none;
+    display: flex; align-items: center; justify-content: space-between;
+    border-top: 1px solid var(--divider);
+    font: 500 16px/24px var(--font); cursor: pointer;
+  }
+  .rows details:last-child summary { border-bottom: 1px solid var(--divider); }
+  .rows details[open]:last-child summary { border-bottom: 0; }
+  .rows summary::-webkit-details-marker { display: none; }
+  .rows summary svg { width: 20px; height: 20px; fill: none; stroke: var(--text); stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; transition: transform .15s; }
+  .rows details[open] summary svg { transform: rotate(180deg); }
+  .rows summary:focus-visible { outline: 2px solid var(--text); outline-offset: -2px; }
+  .row-body { padding: 0 0 20px; font: 400 15px/20px var(--font); color: var(--text-2); }
+  .rows details:last-child .row-body { border-bottom: 1px solid var(--divider); }
+  .todo { display: inline-block; margin-bottom: 6px; padding: 2px 6px; border-radius: 4px; background: #FFF4E5; color: var(--low); font: 600 11px/16px var(--font); letter-spacing: .02em; text-transform: uppercase; }
+
+  /* ---------- 5. Reviews ---------- */
+  .reviews { padding: 32px 16px 32px; }
+  .rev-launch p { margin-top: 8px; font: 400 15px/20px var(--font); color: var(--text-2); }
+  .rev-skel { display: none; }
+  body[data-reviews="skeleton"] .rev-launch { display: none; }
+  body[data-reviews="skeleton"] .rev-skel { display: block; }
+  .rev-skel .s-title { width: 96px; height: 24px; }
+  .rev-skel .s-rating { margin-top: 8px; width: 180px; height: 24px; }
+  .rev-photos { margin: 16px -16px 0; padding: 0 16px; display: flex; gap: 8px; overflow: hidden; }
+  .rev-photos .skel { flex: 0 0 120px; height: 120px; border-radius: 8px; }
+  .rev-cards { margin-top: 16px; display: grid; gap: 12px; }
+  .rev-cards .skel { height: 144px; border-radius: 8px; }
+  .rev-skel .s-btn { margin-top: 12px; height: 48px; border-radius: 24px; }
+
+  /* ---------- Prototype controls (not part of the design) ---------- */
+  .proto {
+    margin: 0 16px 24px; border: 1.5px dashed #BDBDBD; border-radius: 12px;
+    font: 400 13px/16px var(--font); color: var(--text-2);
+  }
+  .proto summary { height: 44px; padding: 0 12px; display: flex; align-items: center; cursor: pointer; font-weight: 600; color: var(--text); }
+  .proto .grid2 { padding: 0 12px 12px; display: grid; gap: 8px; }
+  .proto label { display: grid; grid-template-columns: 96px 1fr; align-items: center; gap: 8px; }
+  .proto select { height: 36px; font: inherit; color: var(--text); border: 1px solid #CFCFCF; border-radius: 6px; background: #fff; padding: 0 6px; }
+  .proto .metrics { padding: 0 12px 12px; font-variant-numeric: tabular-nums; }
+
+  /* ---------- 6. Sticky cart bar ---------- */
+  .cartbar {
+    position: fixed; z-index: 40; bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 100%; max-width: 375px;
+    padding: 12px 16px calc(12px + var(--sab));
+    background: #fff; box-shadow: inset 0 1px 0 var(--divider);   /* divider inside the 80 + safe area */
+  }
+  .cta {
+    width: 100%; height: 56px; border: 0; border-radius: 28px;
+    background: var(--text); color: #fff;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    transition: transform 80ms ease-out, background-color .15s;
+  }
+  .cta:active:not(:disabled) { transform: scale(.98); }
+  .cta:disabled { background: var(--divider); color: var(--text-2); cursor: default; }
+  .cta:focus-visible { outline: 2px solid var(--text); outline-offset: 3px; }
+  /* Full-width text boxes: a label change never moves the box, so it never counts as a shift. */
+  .cta-main, .cta-sub { width: 100%; text-align: center; }
+  .cta-main { font: 600 16px/20px var(--font); display: flex; justify-content: center; }
+  .cta-sub { font: 400 13px/16px var(--font); opacity: .82; }
+  .cta-sub:empty { display: none; }
+  .spinner { width: 22px; height: 22px; border-radius: 50%; border: 2.5px solid rgba(255,255,255,.35); border-top-color: #fff; animation: spin .7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ---------- Sheets (size sheet, size guide) ---------- */
+  .backdrop {
+    position: fixed; inset: 0; z-index: 20; background: rgba(0, 0, 0, .4);
+    opacity: 0; visibility: hidden; transition: opacity .2s, visibility 0s .2s;
+  }
+  .backdrop.on { opacity: 1; visibility: visible; transition: opacity .2s; }
+  .sheet {
+    position: fixed; z-index: 30; bottom: 0; left: 50%;
+    width: 100%; max-width: 375px;
+    background: #fff; border-radius: 16px 16px 0 0;
+    transform: translate(-50%, 100%); visibility: hidden;
+    transition: transform .25s cubic-bezier(.2, .8, .2, 1), visibility 0s .25s;
+    touch-action: pan-y;
+  }
+  .sheet.on { transform: translate(-50%, 0); visibility: visible; transition: transform .25s cubic-bezier(.2, .8, .2, 1); }
+  .sheet.dragging { transition: none; }
+  .sheet-head {
+    position: relative; height: 56px; padding: 0 4px 0 16px;
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    touch-action: none; cursor: grab;
+  }
+  .sheet-head::before { content: ""; position: absolute; top: 6px; left: 50%; width: 36px; height: 4px; margin-left: -18px; border-radius: 2px; background: #D4D4D4; }
+  .sheet-head .left { display: flex; align-items: center; gap: 12px; }
+  .close-btn { width: 44px; height: 44px; border: 0; background: none; border-radius: 50%; display: grid; place-items: center; }
+  .close-btn svg { width: 20px; height: 20px; stroke: var(--text); stroke-width: 1.75; stroke-linecap: round; fill: none; }
+  .close-btn:focus-visible { outline: 2px solid var(--text); }
+
+  #sizeSheet { height: calc(56px + 464px + 16px + var(--bar)); }   /* 616 + bottom safe area */
+  #sizeSheet .grid { margin: 0 16px; }
+
+  #guideSheet { max-height: calc(100svh - var(--sat) - 24px); display: flex; flex-direction: column; z-index: 50; }
+  .backdrop.top { z-index: 45; }   /* size guide sits above the cart bar */
+  .guide-body { overflow-y: auto; padding: 0 16px calc(16px + var(--sab)); }
+  .guide-body p { font: 400 13px/16px var(--font); color: var(--text-2); margin-bottom: 12px; }
+  .guide-table { width: 100%; border-collapse: collapse; font: 400 15px/20px var(--font); font-variant-numeric: tabular-nums; }
+  .guide-table th { text-align: left; font: 600 13px/16px var(--font); color: var(--text-2); padding: 8px 0; border-bottom: 1px solid var(--divider); position: sticky; top: 0; background: #fff; }
+  .guide-table td { padding: 10px 0; border-bottom: 1px solid var(--divider); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .skel { animation: none; }
+    .fade-in { animation: none; }
+    .sheet, .sheet.on, .backdrop, .backdrop.on { transition: none; }
+    .face, .cta, .dot, .rows summary svg { transition: none; }
+    .spinner { animation-duration: 1.6s; }
+  }
+</style>
+</head>
+<body data-price="b" data-reviews="launch" data-frame="device">
+<script>
+  /* Runs before first paint: every layout choice is fixed here, so nothing moves later. */
+  (function () {
+    var p = new URLSearchParams(location.search);
+    var b = document.body;
+    b.dataset.price = p.get('price') === 'a' ? 'a' : 'b';
+    b.dataset.reviews = p.get('reviews') === 'skeleton' ? 'skeleton' : 'launch';
+    b.dataset.frame = ['812', '667'].indexOf(p.get('frame')) > -1 ? p.get('frame') : 'device';
+  })();
+</script>
+
+<div class="app" id="page">
+  <div class="safe-top"></div>
+
+  <!-- 0. Top controls -->
+  <div class="topctl">
+    <button class="icon-btn" type="button" aria-label="Back" id="backBtn">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <button class="icon-btn" type="button" aria-label="Cart, 0 items" id="cartBtn">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l-1 12H6L5 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>
+      <span class="badge" id="badge" hidden>0</span>
+    </button>
+  </div>
+
+  <main>
+    <!-- 1. Hero image -->
+    <section class="hero" aria-label="Product photos">
+      <div class="hero-track" id="heroTrack" tabindex="0" role="region" aria-label="Product photos, use arrow keys to scroll">
+        <div class="slide" role="group" aria-roledescription="slide" aria-label="Photo 1 of 3">
+          <div class="ph"><strong>Photo needed</strong>Side view, shown first</div>
+        </div>
+        <div class="slide" role="group" aria-roledescription="slide" aria-label="Photo 2 of 3">
+          <div class="ph"><strong>Photo needed</strong>Top view</div>
+        </div>
+        <div class="slide" role="group" aria-roledescription="slide" aria-label="Photo 3 of 3">
+          <div class="ph"><strong>Photo needed</strong>Outsole</div>
+        </div>
+      </div>
+      <div class="dots" aria-hidden="true"><span class="dot on"></span><span class="dot"></span><span class="dot"></span></div>
+    </section>
+
+    <!-- 2. Name and price (in first paint) -->
+    <header class="title">
+      <hgroup>
+        <h1 id="pName">Nike Pegasus 43</h1>
+        <p class="colorway" id="pColor">Black/White-Volt</p>
+      </hgroup>
+      <div class="price-block">
+        <p class="price" id="pPrice">$140</p>
+        <p class="tax">Tax and shipping at checkout</p>
+      </div>
+    </header>
+
+    <!-- 3. Size selector -->
+    <section class="sizes" aria-labelledby="sizesTitle">
+      <div class="sizes-head">
+        <div class="left">
+          <h2 id="sizesTitle">Select size (US)</h2>
+          <span class="key">Low stock</span>
+        </div>
+        <button class="text-btn" type="button" id="guideBtn">Size guide</button>
+      </div>
+      <div class="grid" id="pageGrid" role="radiogroup" aria-labelledby="sizesTitle" aria-busy="true"></div>
+    </section>
+
+    <!-- 4. Tech and description -->
+    <section class="tech" aria-labelledby="techTitle">
+      <h2 id="techTitle">Details</h2>
+      <p class="desc">Approved product description goes here. It is held to three lines on the page, and the full text opens inside “Cushioning and tech” below. No product copy has been supplied yet, so this is placeholder text.</p>
+      <div class="rows">
+        <details>
+          <summary>Cushioning and tech <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
+          <div class="row-body"><span class="todo">Copy needed</span><br>Full description and tech specs. Use approved product copy only.</div>
+        </details>
+        <details>
+          <summary>Fit and sizing <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
+          <div class="row-body"><span class="todo">Copy needed</span><br>Fit notes, such as whether to size up. The size guide button above shows US men's, women's and EU from the stock file.</div>
+        </details>
+        <details>
+          <summary>Materials and care <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
+          <div class="row-body"><span class="todo">Copy needed</span><br>Upper, midsole and outsole materials, and care instructions.</div>
+        </details>
+      </div>
+    </section>
+
+    <!-- 5. Reviews: state chosen before first paint -->
+    <section class="reviews" aria-labelledby="revTitle">
+      <div class="rev-launch">
+        <h2 id="revTitle">Reviews</h2>
+        <p id="revLaunchText">Reviews open at launch on 10 Dec.</p>
+      </div>
+      <div class="rev-skel" aria-hidden="true">
+        <div class="skel s-title"></div>
+        <div class="skel s-rating"></div>
+        <div class="rev-photos"><div class="skel"></div><div class="skel"></div><div class="skel"></div></div>
+        <div class="rev-cards"><div class="skel"></div><div class="skel"></div></div>
+        <div class="skel s-btn"></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Prototype controls: not part of the design. Hide with ?controls=0 -->
+  <details class="proto" id="proto">
+    <summary>Prototype controls</summary>
+    <div class="grid2">
+      <label>Launch state
+        <select data-param="launch">
+          <option value="auto">From date (today vs 10 Dec)</option>
+          <option value="pre">Before launch</option>
+          <option value="live">Launched</option>
+        </select>
+      </label>
+      <label>Price layout
+        <select data-param="price">
+          <option value="b">B · large, under name</option>
+          <option value="a">A · right of name</option>
+        </select>
+      </label>
+      <label>Stock load
+        <select data-param="stock">
+          <option value="normal">Normal (0.4s)</option>
+          <option value="slow">Slow (2.5s)</option>
+          <option value="fail">Fails first time</option>
+        </select>
+      </label>
+      <label>Add / notify
+        <select data-param="add">
+          <option value="ok">Succeeds</option>
+          <option value="fail">Fails first time</option>
+        </select>
+      </label>
+      <label>Reviews
+        <select data-param="reviews">
+          <option value="launch">Open at launch</option>
+          <option value="skeleton">Loading skeleton</option>
+        </select>
+      </label>
+      <label>Safe areas
+        <select data-param="frame">
+          <option value="device">This device</option>
+          <option value="812">375 × 812 (47 / 34)</option>
+          <option value="667">375 × 667 (20 / 0)</option>
+        </select>
+      </label>
+    </div>
+    <div class="metrics" id="metrics">Layout shift: measuring…</div>
+  </details>
+</div>
+
+<!-- 6. Sticky cart bar (in first paint) -->
+<div class="cartbar" id="cartbar">
+  <button class="cta" type="button" id="cta" disabled>
+    <span class="cta-main" id="ctaMain">Loading sizes</span>
+    <span class="cta-sub" id="ctaSub"></span>
+  </button>
+</div>
+
+<!-- Size sheet -->
+<div class="sheet" id="sizeSheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+  <div class="sheet-head" data-drag>
+    <div class="left">
+      <h2 id="sheetTitle">Select size (US)</h2>
+      <span class="key">Low stock</span>
+    </div>
+    <button class="close-btn" type="button" aria-label="Close size picker" data-close>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+  </div>
+  <div class="grid" id="sheetGrid" role="radiogroup" aria-labelledby="sheetTitle"></div>
+</div>
+
+<!-- Size guide sheet -->
+<div class="sheet" id="guideSheet" role="dialog" aria-modal="true" aria-labelledby="guideTitle">
+  <div class="sheet-head" data-drag>
+    <h2 id="guideTitle">Size guide</h2>
+    <button class="close-btn" type="button" aria-label="Close size guide" data-close>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+  </div>
+  <div class="guide-body">
+    <p>Conversions from the stock file. Fit advice and foot-length measurements are still needed.</p>
+    <table class="guide-table">
+      <thead><tr><th scope="col">US men's</th><th scope="col">US women's</th><th scope="col">EU</th></tr></thead>
+      <tbody id="guideRows"></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="backdrop" id="backdrop"></div>
+<p class="sr-only" aria-live="polite" id="live"></p>
+
+<script>
+(function () {
+  'use strict';
+  var STOCK_URL = 'pegasus-43-stock.json';
+
+  var params = new URLSearchParams(location.search);
+  var opt = {
+    launch: params.get('launch') || 'auto',
+    stock: params.get('stock') || 'normal',
+    add: params.get('add') || 'ok',
+    controls: params.get('controls') !== '0'
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+  var page = $('page'), cta = $('cta'), ctaMain = $('ctaMain'), ctaSub = $('ctaSub');
+  var pageGrid = $('pageGrid'), sheetGrid = $('sheetGrid');
+  var sizeSheet = $('sizeSheet'), guideSheet = $('guideSheet'), backdrop = $('backdrop');
+
+  var state = {
+    status: 'loading',      // loading | ready | error
+    rows: [],
+    selected: null,         // sku
+    action: 'idle',         // idle | busy | done | error
+    loadAttempts: 0,
+    addAttempts: 0,
+    cartCount: 0,
+    price: 140,
+    launchDate: null
+  };
+
+  var wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
+  var num = function (n) { return String(Number(n)); };
+  var money = function (n) { return '$' + (n % 1 ? n.toFixed(2) : String(n)); };
+  var announce = function (msg) { var el = $('live'); el.textContent = ''; setTimeout(function () { el.textContent = msg; }, 30); };
+
+  function parseDate(s) { var p = s.split('-').map(Number); return new Date(p[0], p[1] - 1, p[2]); }
+  function launchLabel() { return state.launchDate ? state.launchDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : '10 Dec'; }
+  function isPreLaunch() {
+    if (opt.launch === 'pre') return true;
+    if (opt.launch === 'live') return false;
+    if (!state.launchDate) return true;
+    var today = new Date(); today.setHours(0, 0, 0, 0);
+    return today < state.launchDate;
+  }
+
+  function statusOf(r) {
+    if (!r.in_stock || r.stock_quantity <= 0) return 'sold';
+    if (r.stock_quantity <= 5) return 'low';
+    return 'ok';
+  }
+  function selectedRow() {
+    for (var i = 0; i < state.rows.length; i++) if (state.rows[i].sku === state.selected) return state.rows[i];
+    return null;
+  }
+
+  /* ---------- Size grids ---------- */
+  function skeletonGrid(grid) {
+    var html = '';
+    for (var i = 0; i < 26; i++) html += '<div class="skel"></div>';
+    grid.innerHTML = html;
+    grid.setAttribute('aria-busy', 'true');
+  }
+  function errorGrid(grid) {
+    grid.innerHTML = '<div class="grid-msg"><p>Sizes didn’t load.<br>Check your connection and try again.</p>' +
+      '<button class="pill-btn" type="button" data-retry>Try again</button></div>';
+    grid.setAttribute('aria-busy', 'false');
+  }
+  function buildGrid(grid, group) {
+    var html = '';
+    state.rows.forEach(function (r) {
+      var s = statusOf(r), m = num(r.size_us_men), w = num(r.size_us_women);
+      var label = "Men's " + m + ", women's " + w +
+        (s === 'sold' ? ', sold out' : s === 'low' ? ', ' + r.stock_quantity + ' left' : '');
+      var id = group + '-' + r.sku;
+      html += '<label class="size' + (s === 'low' ? ' low' : s === 'sold' ? ' sold' : '') + '" for="' + id + '">' +
+        '<input type="radio" name="' + group + '" id="' + id + '" value="' + r.sku + '" aria-label="' + label + '"' +
+        (s === 'sold' ? ' disabled' : '') + (state.selected === r.sku ? ' checked' : '') + '>' +
+        '<span class="face" aria-hidden="true"><span class="m">M ' + m + '</span><span class="w">W ' + w + '</span></span>' +
+        '</label>';
+    });
+    grid.innerHTML = html;
+    grid.classList.remove('fade-in'); void grid.offsetWidth; grid.classList.add('fade-in');
+    grid.setAttribute('aria-busy', 'false');
+  }
+  function renderGrids() {
+    [pageGrid, sheetGrid].forEach(function (g) {
+      if (state.status === 'loading') skeletonGrid(g);
+      else if (state.status === 'error') errorGrid(g);
+      else buildGrid(g, g === pageGrid ? 'size' : 'size-sheet');
+    });
+  }
+  function syncChecked() {
+    [pageGrid, sheetGrid].forEach(function (g) {
+      g.querySelectorAll('input').forEach(function (i) { i.checked = i.value === state.selected; });
+    });
+  }
+
+  function onPick(e) {
+    var t = e.target;
+    if (!t.matches || !t.matches('input[type=radio]')) return;
+    state.selected = t.value;
+    if (state.action !== 'busy') state.action = 'idle';
+    syncChecked();
+    renderCTA();
+    var r = selectedRow();
+    var s = statusOf(r);
+    announce('Selected men\'s ' + num(r.size_us_men) + ', women\'s ' + num(r.size_us_women) + (s === 'low' ? ', only ' + r.stock_quantity + ' left' : ''));
+  }
+  pageGrid.addEventListener('change', onPick);
+  sheetGrid.addEventListener('change', onPick);
+  document.addEventListener('click', function (e) { if (e.target.closest('[data-retry]')) loadStock(); });
+
+  /* ---------- Cart bar ---------- */
+  function renderCTA() {
+    var pre = isPreLaunch(), r = selectedRow();
+    var sizeText = '';
+    if (r) {
+      sizeText = 'M ' + num(r.size_us_men) + ' / W ' + num(r.size_us_women);
+      if (statusOf(r) === 'low') sizeText += ' · Only ' + r.stock_quantity + ' left';
+    }
+    var main = '', sub = '', disabled = false, busy = false;
+
+    if (state.status === 'loading') { main = 'Loading sizes'; disabled = true; }
+    else if (state.status === 'error') { main = 'Try again'; sub = 'Sizes didn’t load'; }
+    else if (state.action === 'busy') { busy = true; main = pre ? 'Setting alert' : 'Adding to cart'; }
+    else if (state.action === 'error') { main = 'Try again'; sub = pre ? 'Alert wasn’t set' : 'Couldn’t add to cart'; }
+    else if (pre) {
+      if (state.action === 'done' && r) { main = 'Alert set · ' + launchLabel(); sub = sizeText + ' · Tap a size to change'; }
+      else { main = 'Notify me · Launches ' + launchLabel(); sub = sizeText; }
+    } else {
+      if (state.action === 'done') { main = 'Added · View cart'; sub = sizeText; }
+      else if (r) { main = 'Add to Cart · ' + money(state.price); sub = sizeText; }
+      else { main = 'Select size · ' + money(state.price); }
+    }
+
+    cta.disabled = disabled;
+    cta.setAttribute('aria-busy', busy ? 'true' : 'false');
+    if (busy) {
+      ctaMain.innerHTML = '<span class="spinner" aria-hidden="true"></span><span class="sr-only">' + main + '</span>';
+      ctaSub.textContent = '';
+    } else {
+      ctaMain.textContent = main;
+      ctaSub.textContent = sub;
+    }
+  }
+
+  cta.addEventListener('click', function () {
+    if (state.status === 'error') { loadStock(); return; }
+    if (state.status !== 'ready' || state.action === 'busy') return;
+    var r = selectedRow();
+    if (!r) {                                          // asks for a size first (both launch states)
+      if (openEl === sizeSheet) {
+        var first = sheetGrid.querySelector('input:not(:disabled)');
+        if (first) first.focus();
+        announce('Choose a size first.');
+      } else openSheet(sizeSheet);
+      return;
+    }
+    if (state.action === 'done') {
+      if (!isPreLaunch()) announce('The cart page is not part of this prototype.');
+      return;
+    }
+    submit();
+  });
+
+  function submit() {
+    var pre = isPreLaunch();
+    state.action = 'busy'; renderCTA();
+    state.addAttempts++;
+    wait(900).then(function () {
+      if (opt.add === 'fail' && state.addAttempts === 1) {
+        state.action = 'error'; renderCTA();
+        announce(pre ? 'The alert wasn’t set. Try again.' : 'Couldn’t add to cart. Try again.');
+        return;
+      }
+      state.action = 'done';
+      if (!pre) {
+        state.cartCount++;
+        var b = $('badge'); b.hidden = false; b.textContent = state.cartCount;
+        $('cartBtn').setAttribute('aria-label', 'Cart, ' + state.cartCount + ' item' + (state.cartCount > 1 ? 's' : ''));
+      }
+      renderCTA();
+      var r = selectedRow();
+      announce(pre ? 'Alert set for men\'s ' + num(r.size_us_men) + '. We’ll tell you on ' + launchLabel() + '.' : 'Added to cart.');
+      if (!pre) setTimeout(function () { closeSheet(sizeSheet); }, 600);
+    });
+  }
+
+  /* ---------- Stock load ---------- */
+  function loadStock() {
+    state.status = 'loading'; state.loadAttempts++;
+    renderGrids(); renderCTA();
+    var attempt = state.loadAttempts;
+    var delay = opt.stock === 'slow' ? 2500 : 400;
+    return wait(delay).then(function () {
+      if (opt.stock === 'fail' && attempt === 1) throw new Error('Simulated failure');
+      return fetch(STOCK_URL, { cache: 'no-store' });
+    }).then(function (res) {
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      return res.json();
+    }).then(function (rows) {
+      rows.sort(function (a, b) { return a.display_order - b.display_order; });
+      state.rows = rows;
+      var first = rows[0];
+      state.price = Number(first.price);
+      state.launchDate = parseDate(first.launch_date);
+      // Same values as the first paint, so these writes do not move anything.
+      $('pName').textContent = first.product_name;
+      $('pColor').textContent = first.colorway;
+      $('pPrice').textContent = money(state.price);
+      $('revLaunchText').textContent = 'Reviews open at launch on ' + launchLabel() + '.';
+      $('guideRows').innerHTML = rows.map(function (r) {
+        return '<tr><td>M ' + num(r.size_us_men) + '</td><td>W ' + num(r.size_us_women) + '</td><td>' + r.size_eu + '</td></tr>';
+      }).join('');
+      state.status = 'ready';
+      renderGrids(); renderCTA();
+    }).catch(function (err) {
+      console.warn('Stock load failed:', err.message, location.protocol === 'file:' ? '(open through the local server, not file://)' : '');
+      state.status = 'error';
+      renderGrids(); renderCTA();
+      announce('Sizes didn’t load. Try again.');
+    });
+  }
+
+  /* ---------- Sheets ---------- */
+  var openEl = null, lastFocus = null;
+  function openSheet(el) {
+    if (openEl === el) return;
+    if (openEl) closeSheet(openEl, true);
+    lastFocus = document.activeElement;
+    openEl = el;
+    el.style.transform = '';
+    backdrop.classList.toggle('top', el === guideSheet);
+    backdrop.classList.add('on');
+    el.classList.add('on');
+    page.inert = true;
+    if (el === guideSheet) $('cartbar').inert = true;
+    document.documentElement.classList.add('lock');
+    var target = el.querySelector('input:checked') || el.querySelector('[data-close]');
+    setTimeout(function () { target.focus({ preventScroll: true }); }, 30);
+  }
+  function closeSheet(el, silent) {
+    el = el || openEl;
+    if (!el || openEl !== el) return;
+    el.classList.remove('on', 'dragging');
+    el.style.transform = '';
+    backdrop.classList.remove('on');
+    page.inert = false; $('cartbar').inert = false;
+    document.documentElement.classList.remove('lock');
+    openEl = null;
+    if (!silent && lastFocus && document.contains(lastFocus)) lastFocus.focus({ preventScroll: true });
+  }
+  backdrop.addEventListener('click', function () { closeSheet(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && openEl) closeSheet(); });
+  [sizeSheet, guideSheet].forEach(function (sheet) {
+    sheet.querySelector('[data-close]').addEventListener('click', function () { closeSheet(sheet); });
+    // Swipe down on the header to close.
+    var head = sheet.querySelector('[data-drag]'), y0 = null, dy = 0;
+    head.addEventListener('pointerdown', function (e) {
+      if (e.target.closest('button')) return;
+      y0 = e.clientY; dy = 0; sheet.classList.add('dragging'); head.setPointerCapture(e.pointerId);
+    });
+    head.addEventListener('pointermove', function (e) {
+      if (y0 === null) return;
+      dy = Math.max(0, e.clientY - y0);
+      sheet.style.transform = 'translate(-50%, ' + dy + 'px)';
+    });
+    var end = function () {
+      if (y0 === null) return;
+      y0 = null; sheet.classList.remove('dragging');
+      if (dy > 80) closeSheet(sheet); else sheet.style.transform = '';
+    };
+    head.addEventListener('pointerup', end);
+    head.addEventListener('pointercancel', end);
+  });
+  $('guideBtn').addEventListener('click', function () { openSheet(guideSheet); });
+  $('backBtn').addEventListener('click', function () { announce('Back is not wired up in this prototype.'); });
+  $('cartBtn').addEventListener('click', function () { announce('The cart page is not part of this prototype.'); });
+
+  /* ---------- Hero dots ---------- */
+  var track = $('heroTrack'), dots = document.querySelectorAll('.dot');
+  track.addEventListener('scroll', function () {
+    var i = Math.round(track.scrollLeft / track.clientWidth);
+    dots.forEach(function (d, k) { d.classList.toggle('on', k === i); });
+  }, { passive: true });
+
+  /* ---------- Prototype controls ---------- */
+  var proto = $('proto');
+  if (!opt.controls) proto.remove();
+  else {
+    proto.querySelectorAll('select').forEach(function (s) {
+      var v = params.get(s.dataset.param); if (v) s.value = v;
+      s.addEventListener('change', function () {
+        var p = new URLSearchParams(location.search);
+        if (s.selectedIndex === 0) p.delete(s.dataset.param); else p.set(s.dataset.param, s.value);
+        p.set('controls', 'open');
+        location.search = p.toString();
+      });
+    });
+    if (params.get('controls') === 'open') proto.open = true;
+    // Layout-shift meter (Chromium): counts shifts not caused by user input.
+    var cls = 0, metrics = $('metrics');
+    var showCls = function () { metrics.textContent = 'Layout shift (CLS) since load: ' + cls.toFixed(4); };
+    try {
+      new PerformanceObserver(function (list) {
+        list.getEntries().forEach(function (e) { if (!e.hadRecentInput) cls += e.value; });
+        showCls();
+      }).observe({ type: 'layout-shift', buffered: true });
+      showCls();
+    } catch (e) { metrics.textContent = 'Layout shift meter needs a Chromium browser.'; }
+  }
+
+  loadStock();
+})();
+</script>
+</body>
+</html>
