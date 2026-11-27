@@ -2,6 +2,8 @@
 
 A single-file, no-build prototype of a mobile product page for the Nike Pegasus 43. It is designed for a 375px-wide screen. The two goals are **zero layout shift while loading** and **key information and actions within thumb reach**.
 
+**Live prototype:** <https://noodiefroggo.github.io/pegasus-43-mobile-pdp/>. Open it on a phone, or in DevTools at 375px wide.
+
 > This is a concept prototype, not affiliated with or endorsed by Nike. The photos, product copy and reviews are placeholders.
 
 | First screen (before launch) | Size sheet (after launch) | Size guide | Loading |
