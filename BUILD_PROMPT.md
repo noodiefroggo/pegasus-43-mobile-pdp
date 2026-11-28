@@ -9,6 +9,23 @@ Build a mobile-first product detail page prototype for the Nike Pegasus 43, desi
 - System font stack only, so no web font swaps in after first paint.
 - Don't invent product copy, specs, photos or reviews. Mark empty slots as "Photo needed" or "Copy needed".
 - The file has no currency. Assume US dollars.
+- `speed-budget.json` at the repo root is the speed budget. It has exactly these three keys, and the page must meet them on a slow phone (see "Slow phone check"). Don't add keys, remove keys or loosen a value. A value may only be made stricter.
+
+  | Key | Value | Meaning |
+  |---|---|---|
+  | `performance_score_min` | 90 | Lighthouse mobile performance score must be at least 90 (stricter is higher) |
+  | `size_grid_shift_px_max` | 0 | The size grid's top edge may move 0 CSS px from first paint to fully loaded (0 is the only allowed value) |
+  | `size_button_min_px` | 44 | The smaller of width and height of every size button, sold out included, must be at least 44 CSS px (stricter is higher) |
+
+- The speed check finds five elements by `data-testid`. If one is missing, the check fails.
+
+  | `data-testid` | Put it on |
+  |---|---|
+  | `size-grid` | The page's size grid box (the 464px grid, not the size sheet's copy) |
+  | `size-button` | Every available or low-stock size button |
+  | `size-button-sold-out` | Every sold-out size button. These stay in the grid at full size |
+  | `main-photo` | The first hero slide's photo: the "Photo needed" placeholder now, the `<img>` once a photo is supplied |
+  | `price` | The `$140` price text |
 
 ## Frames and tokens
 
@@ -23,6 +40,8 @@ Back and cart buttons, 44 × 44, laid over the hero 8px below the safe area. The
 
 ### 1. Hero image: `40svh`
 325px at 812, 267px at 667. Use `svh`, not `vh` or `dvh`. Three swipeable photo placeholders (side, top, outsole) with dots over the image.
+
+The hero's height comes only from `40svh`, never from the photo. When real photos arrive, each `<img>` fills its slide (`width: 100%; height: 100%; object-fit: contain`) and has `width` and `height` attributes. The first photo is `data-testid="main-photo"`, loads eagerly with `fetchpriority="high"`, and is the largest thing on the first screen. A photo that sizes its own box pushes the size grid down when it arrives.
 
 ### 2. Name, colorway and price: 108px
 - 16 top + 32 name + 20 colorway + 4 gap + 32 price + 4 bottom.
@@ -86,6 +105,45 @@ Before first paint, choose between two states:
 - If stock fails, show the retry message inside the 464px grid box.
 - Fix every layout choice before first paint, and insert nothing above existing content.
 - Fade content in over 150ms. Turn off shimmer and transitions for reduced motion.
+- Text that the stock file rewrites after first paint (name, colorway, price) must not change its box. The name row is 32px tall: if a name from the file would wrap to a second line, it pushes the grid down 32px when stock arrives.
+- The cart bar's second line must not move the main label when it appears, for example "Sizes didn't load". Keep the label in the same place with or without the second line.
+
+## Slow phone check
+
+Judge layout shift on a slow phone only. Don't judge the size grid from a desktop trace or an unthrottled trace.
+
+**Settings.** Use these for every trace and Lighthouse run:
+
+- 375 × 812 CSS px viewport, 3x pixel density, mobile and touch on
+- Slow 4G: 150 ms round trip, 1638.4 Kbps (DevTools throttling: 562.5 ms request latency, 1474.56 Kbps down, 675 Kbps up)
+- 4x CPU slowdown
+- Cold cache, page served from the local server
+
+**Trace (Chrome DevTools MCP).**
+
+1. Emulate the viewport as `375x812x3,mobile,touch`, the network as `Slow 4G` and the CPU at `4`.
+2. Before the page loads, add a script (`navigate_page` with `initScript`) that:
+   - logs every `layout-shift` entry with its time, value and sources (node, previous rect, current rect);
+   - logs the top edge of `[data-testid="size-grid"]` (`getBoundingClientRect().top + scrollY`) on every DOM change and every 10 ms, from first paint until a few seconds after `load` and the stock file have both finished.
+3. Record a performance trace with reload and cache bypass, save it, and count its `LayoutShift` events.
+4. Repeat steps 2 and 3 for `?stock=slow` and `?stock=fail` (then tap "Try again").
+
+**Lighthouse.** The DevTools MCP's own Lighthouse tool leaves out performance, so run the Lighthouse CLI with this config, unchanged. Run it at least three times. A single low score with a large "Unattributable" task is the test machine, so rerun before judging.
+
+```json
+{
+  "extends": "lighthouse:default",
+  "settings": {
+    "onlyCategories": ["performance"],
+    "formFactor": "mobile",
+    "throttlingMethod": "simulate",
+    "throttling": { "rttMs": 150, "throughputKbps": 1638.4, "requestLatencyMs": 562.5, "downloadThroughputKbps": 1474.56, "uploadThroughputKbps": 675, "cpuSlowdownMultiplier": 4 },
+    "screenEmulation": { "width": 375, "height": 812, "deviceScaleFactor": 3, "mobile": true, "disabled": false }
+  }
+}
+```
+
+**Report.** List every element that moves the size grid while the page loads: the photo, a font, the price, or anything else. For each one, give how many px it pushes the grid, when it happens (ms from navigation), and the cause. If nothing moves it, say so, and give the grid's top edge with when it was measured. List shifts elsewhere on the page separately. Then compare the results with each `speed-budget.json` key.
 
 ## Prototype controls
 
@@ -111,3 +169,7 @@ Check these in a browser at both frames and report the results, including anythi
 4. Every cart bar state can be reached with the URL parameters.
 5. Keyboard use works for the sizes and both sheets.
 6. The console shows no errors in the normal flow.
+7. Under the slow phone check, the size grid moves 0 px in the normal, slow and failed-stock loads, and the trace has no `LayoutShift` events.
+8. Lighthouse performance is at least 90 with the config above.
+9. Every size button, sold out included, is at least 44px on its smaller side.
+10. All five `data-testid` elements are on the page, and `speed-budget.json` has exactly its three keys and values.

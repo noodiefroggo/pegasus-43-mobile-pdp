@@ -26,6 +26,7 @@ Then open <http://localhost:5175/> with a 375px-wide viewport (in DevTools, choo
 |---|---|
 | `index.html` | The whole prototype: HTML, CSS and JS, with no dependencies |
 | `pegasus-43-stock.json` | Stock data: 26 sizes with price, colorway, stock level and launch date |
+| `speed-budget.json` | Speed budget for a slow phone: Lighthouse performance ≥ 90, size grid moves 0 px, size buttons ≥ 44 px |
 | [`BUILD_PROMPT.md`](BUILD_PROMPT.md) | The prompt that describes how to build this prototype |
 | `screenshots/` | Images used in this README |
 
@@ -47,6 +48,7 @@ On a 375 × 667 screen the hero is 267px and the cart bar is 80px.
 ## Design decisions
 
 - **Layout is fixed before first paint.** Every loading skeleton uses the same box as the content that replaces it. Name, price and the cart bar are in the HTML, the page uses system fonts so no web font swaps in, and nothing is inserted above existing content. The built-in meter reports a CLS of **0**.
+- **Checked on a slow phone.** On 28 Nov 2026 the page was tested at 375 × 812, 3x, Slow 4G and a 4x CPU slowdown, both locally and live. The size grid's top edge stayed at 492.8px from first paint to fully loaded, including slow and failed stock loads. CLS was 0 and Lighthouse performance was 100. `BUILD_PROMPT.md` describes how to repeat the check.
 - **The hero uses `svh`, not `vh` or `dvh`**, so it doesn't resize when the mobile browser toolbar collapses. It is 40% of the screen height.
 - **Price is shown once, under the name** (option B): a large `$140` with tax and shipping text beside it. The alternative, price to the right of the name (option A), is kept behind `?price=a` for comparison. Option B costs 36px, so on a 667-tall screen two full rows of sizes show above the cart bar, with the third peeking out.
 - **The colorway is a label under the name.** Price and colorway are the same for every size, so the size buttons carry only the size and its stock status.
@@ -91,3 +93,5 @@ A dashed panel at the bottom of the page switches states. Each setting is also a
 - Product photos, description, specs, fit notes and real reviews.
 - Whether early ordering is allowed before launch.
 - Currency: the stock file has no currency, and USD is assumed.
+- `index.html` doesn't have the five `data-testid` attributes that the speed check reads yet (`size-grid`, `size-button`, `size-button-sold-out`, `main-photo`, `price`).
+- The cart bar label moves 8px when "Sizes didn't load" appears under it. It's below the size grid, so the budget doesn't count it.
