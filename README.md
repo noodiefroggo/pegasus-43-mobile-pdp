@@ -93,5 +93,5 @@ A dashed panel at the bottom of the page switches states. Each setting is also a
 - Product photos, description, specs, fit notes and real reviews.
 - Whether early ordering is allowed before launch.
 - Currency: the stock file has no currency, and USD is assumed.
-- `index.html` doesn't have the five `data-testid` attributes that the speed check reads yet (`size-grid`, `size-button`, `size-button-sold-out`, `main-photo`, `price`).
+- `main-photo` is on the first photo placeholder for now. Move it to the `<img>` once a real photo is supplied.
 - The cart bar label moves 8px when "Sizes didn't load" appears under it. It's below the size grid, so the budget doesn't count it.

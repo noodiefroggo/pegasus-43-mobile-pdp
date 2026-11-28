@@ -350,7 +350,7 @@
     <section class="hero" aria-label="Product photos">
       <div class="hero-track" id="heroTrack" tabindex="0" role="region" aria-label="Product photos, use arrow keys to scroll">
         <div class="slide" role="group" aria-roledescription="slide" aria-label="Photo 1 of 3">
-          <div class="ph"><strong>Photo needed</strong>Side view, shown first</div>
+          <div class="ph" data-testid="main-photo"><strong>Photo needed</strong>Side view, shown first</div>
         </div>
         <div class="slide" role="group" aria-roledescription="slide" aria-label="Photo 2 of 3">
           <div class="ph"><strong>Photo needed</strong>Top view</div>
@@ -369,7 +369,7 @@
         <p class="colorway" id="pColor">Black/White-Volt</p>
       </hgroup>
       <div class="price-block">
-        <p class="price" id="pPrice">$140</p>
+        <p class="price" id="pPrice" data-testid="price">$140</p>
         <p class="tax">Tax and shipping at checkout</p>
       </div>
     </header>
@@ -383,7 +383,7 @@
         </div>
         <button class="text-btn" type="button" id="guideBtn">Size guide</button>
       </div>
-      <div class="grid" id="pageGrid" role="radiogroup" aria-labelledby="sizesTitle" aria-busy="true"></div>
+      <div class="grid" id="pageGrid" data-testid="size-grid" role="radiogroup" aria-labelledby="sizesTitle" aria-busy="true"></div>
     </section>
 
     <!-- 4. Tech and description -->
@@ -586,7 +586,9 @@
       var label = "Men's " + m + ", women's " + w +
         (s === 'sold' ? ', sold out' : s === 'low' ? ', ' + r.stock_quantity + ' left' : '');
       var id = group + '-' + r.sku;
-      html += '<label class="size' + (s === 'low' ? ' low' : s === 'sold' ? ' sold' : '') + '" for="' + id + '">' +
+      // Speed-check hooks: page grid only, so the hidden size sheet's copy isn't counted twice.
+      var testid = grid === pageGrid ? ' data-testid="' + (s === 'sold' ? 'size-button-sold-out' : 'size-button') + '"' : '';
+      html += '<label class="size' + (s === 'low' ? ' low' : s === 'sold' ? ' sold' : '') + '" for="' + id + '"' + testid + '>' +
         '<input type="radio" name="' + group + '" id="' + id + '" value="' + r.sku + '" aria-label="' + label + '"' +
         (s === 'sold' ? ' disabled' : '') + (state.selected === r.sku ? ' checked' : '') + '>' +
         '<span class="face" aria-hidden="true"><span class="m">M ' + m + '</span><span class="w">W ' + w + '</span></span>' +
